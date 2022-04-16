@@ -78,7 +78,7 @@ AS_DEFS =
 
 # C defines
 C_DEFS =  \
--DSTM32F429xx
+-DSTM32F4xx
 
 # AS includes
 AS_INCLUDES = 

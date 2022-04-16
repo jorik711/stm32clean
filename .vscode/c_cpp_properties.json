@@ -7,8 +7,7 @@
                 "${workspaceRoot}/**"
             ],
             "defines": [
-                "STM32F429xx",
-                "USE_HAL_DRIVER"
+                "STM32F4xx"
             ],
             "cStandard": "c11",
             "cppStandard": "c++17",
