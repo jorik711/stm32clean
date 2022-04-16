@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "STM32",
+            "compilerPath": "/usr/bin/arm-none-eabi-gcc",
+            "includePath": [
+                "${workspaceRoot}/**"
+            ],
+            "defines": [
+                "STM32F429xx",
+                "USE_HAL_DRIVER"
+            ],
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-arm"
+        }
+    ],
+    "version": 4
+}
