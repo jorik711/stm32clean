@@ -94,10 +94,10 @@ void gpioa_init() {
 
 void toggle_led() {
 
-		GPIOG->ODR |= 1 << GPIO_IDR_ID13_Pos;
-        GPIOG->ODR = (~(1 << GPIO_IDR_ID14_Pos));
-		for(int i = 500000; i > 0; --i) {}
-		GPIOG->ODR &= (~(1 << GPIO_IDR_ID13_Pos));
-        GPIOG->ODR |= 1 << GPIO_IDR_ID14_Pos;
-		for(int i = 500000; i > 0; --i) {}
+	GPIOG->ODR |= 1 << GPIO_IDR_ID13_Pos;
+    GPIOG->ODR = (~(1 << GPIO_IDR_ID14_Pos));
+	for(int i = 500000; i > 0; --i) {}
+	GPIOG->ODR &= (~(1 << GPIO_IDR_ID13_Pos));
+    GPIOG->ODR |= 1 << GPIO_IDR_ID14_Pos;
+	for(int i = 500000; i > 0; --i) {}
 }
