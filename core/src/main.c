@@ -78,26 +78,25 @@ void system_clock_init() {
 }
 
 void gpioa_init() {
-    RCC->AHB1ENR |= (1<<6);  // Enable the GPIOG clock
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOGEN;  // Enable the GPIOG clock
     /********** PG13 ***********/
-    GPIOG->MODER |= (1 << GPIO_MODER_MODER13_Pos);  // pin PG13(bits 27:26) as Output (01)
-    GPIOG->OTYPER &= ~(1 << GPIO_OTYPER_OT13_Pos);  // bit 13=0 --> Output push pull
-    GPIOG->OSPEEDR |= (2 << GPIO_OSPEEDR_OSPEED13_Pos);  // Pin PG13 (bit  s 27:26) as Fast Speed (1:0)
-    GPIOG->PUPDR &= ~(3 << GPIO_PUPDR_PUPD13_Pos);  // Pin PG13 (bits 27:26) are 0:0 --> no pull up or pulldown
+    GPIOG->MODER |= (GPIO_MODER_MODER13_0);  // pin PG13(bits 27:26) as Output (01)
+    GPIOG->OTYPER &= ~(GPIO_OTYPER_OT13);  // bit 13=0 --> Output push pull
+    GPIOG->OSPEEDR |= (GPIO_OSPEEDR_OSPEED13_1);  // Pin PG13 (bit  s 27:26) as Fast Speed (1:0)
+    GPIOG->PUPDR &= ~(GPIO_PUPDR_PUPD13);  // Pin PG13 (bits 27:26) are 0:0 --> no pull up or pulldown
     /*********** PG14 ************/
-    GPIOG->MODER |= (1 << GPIO_MODER_MODER14_Pos);  // pin PG13(bits 29:28) as Output (01)
-    GPIOG->OTYPER &= ~(1 << GPIO_OTYPER_OT14_Pos);  // bit 14 = 0 --> Output push pull
-    GPIOG->OSPEEDR |= (2 << GPIO_OSPEEDR_OSPEED14_Pos);  // Pin PG14 (bit  s 27:26) as Fast Speed (1:0)
-    GPIOG->PUPDR &= ~(3 << GPIO_PUPDR_PUPD14_Pos);  // Pin PG14 (bits 29:28) are 0:0 --> no pull up or pulldown
-
+    GPIOG->MODER |= (GPIO_MODER_MODER14_0);  // pin PG13(bits 29:28) as Output (01)
+    GPIOG->OTYPER &= ~(GPIO_OTYPER_OT14);  // bit 14 = 0 --> Output push pull
+    GPIOG->OSPEEDR |= (GPIO_OSPEEDR_OSPEED14_1);  // Pin PG14 (bit  s 27:26) as Fast Speed (1:0)
+    GPIOG->PUPDR &= ~(GPIO_PUPDR_PUPD14);  // Pin PG14 (bits 29:28) are 0:0 --> no pull up or pulldown
 }
 
 void toggle_led() {
 
-	GPIOG->ODR |= 1 << GPIO_IDR_ID13_Pos;
-    GPIOG->ODR = (~(1 << GPIO_IDR_ID14_Pos));
+	GPIOG->ODR |= GPIO_IDR_ID13;
+    GPIOG->ODR = ~(GPIO_IDR_ID14);
 	for(int i = 500000; i > 0; --i) {}
-	GPIOG->ODR &= (~(1 << GPIO_IDR_ID13_Pos));
-    GPIOG->ODR |= 1 << GPIO_IDR_ID14_Pos;
+	GPIOG->ODR &= ~(GPIO_IDR_ID13);
+    GPIOG->ODR |= GPIO_IDR_ID14;
 	for(int i = 500000; i > 0; --i) {}
 }
