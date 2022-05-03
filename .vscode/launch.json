@@ -9,8 +9,8 @@
 			"servertype": "openocd",
 			"runToEntryPoint": "main",
 			"preLaunchTask": "Build",
-			"executable": "./build/test.elf",
-			"svdFile": "STM32F429.svd",
+			"executable": "./build/stm32clear.elf",
+			"svdFile": "./startup/STM32F429.svd",
 			"configFiles": [
 				"interface/stlink.cfg",
 				"target/stm32f4x.cfg"
