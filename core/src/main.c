@@ -16,13 +16,13 @@
 #define PLL_P 	2  
 
 void system_clock_init();
-void gpioa_init();
+void gpio_init();
 void toggle_led();
 
 int main(void)
 {
     system_clock_init();
-    gpioa_init();
+    gpio_init();
     while (1)
     {
         toggle_led();
@@ -77,7 +77,7 @@ void system_clock_init() {
 
 }
 
-void gpioa_init() {
+void gpio_init() {
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOGEN;  // Enable the GPIOG clock
     /********** PG13 ***********/
     GPIOG->MODER |= (GPIO_MODER_MODER13_0);  // pin PG13(bits 27:26) as Output (01)
@@ -87,16 +87,16 @@ void gpioa_init() {
     /*********** PG14 ************/
     GPIOG->MODER |= (GPIO_MODER_MODER14_0);  // pin PG13(bits 29:28) as Output (01)
     GPIOG->OTYPER &= ~(GPIO_OTYPER_OT14);  // bit 14 = 0 --> Output push pull
-    GPIOG->OSPEEDR |= (GPIO_OSPEEDR_OSPEED14_1);  // Pin PG14 (bit  s 27:26) as Fast Speed (1:0)
+    GPIOG->OSPEEDR |= (GPIO_OSPEEDR_OSPEED14_1);  // Pin PG14 (bit  s 29:28) as Fast Speed (1:0)
     GPIOG->PUPDR &= ~(GPIO_PUPDR_PUPD14);  // Pin PG14 (bits 29:28) are 0:0 --> no pull up or pulldown
 }
 
 void toggle_led() {
 
-	GPIOG->ODR |= GPIO_IDR_ID13;
-    GPIOG->ODR = ~(GPIO_IDR_ID14);
+    GPIOG->BSRR |= GPIO_BSRR_BS13;
+    GPIOG->BSRR |= GPIO_BSRR_BR14;
 	for(int i = 500000; i > 0; --i) {}
-	GPIOG->ODR &= ~(GPIO_IDR_ID13);
-    GPIOG->ODR |= GPIO_IDR_ID14;
+    GPIOG->BSRR |= GPIO_BSRR_BS14;
+    GPIOG->BSRR |= GPIO_BSRR_BR13;
 	for(int i = 500000; i > 0; --i) {}
 }
