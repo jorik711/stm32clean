@@ -14,22 +14,30 @@
 #define PLL_M 	4
 #define PLL_N 	180
 #define PLL_P 	2  
+#define SYSCLOCK 16000000UL
 
+__IO uint32_t systick_cnt = 0;
+
+/******************** init func ************************/
 void system_clock_init();
 void gpio_init();
+void systick_init();
+/******************** user func ***********************/
 void toggle_led();
+void delay_ms(uint32_t delay);
 
 int main(void)
 {
     system_clock_init();
     gpio_init();
+    systick_init();
     while (1)
     {
         toggle_led();
     }
     return 0;
 }
-
+// FIXME: clock = 16'000'000 Hz!!!! not 180'000'000 Hz
 void system_clock_init() {
     /* Определяем внешний генератор */
     RCC->CR |= RCC_CR_HSEON;
@@ -76,7 +84,6 @@ void system_clock_init() {
     RCC->CFGR |= (RCC_CFGR_SW_PLL << RCC_CFGR_SW_Pos);
 
 }
-
 void gpio_init() {
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOGEN;  // Enable the GPIOG clock
     /********** PG13 ***********/
@@ -90,13 +97,30 @@ void gpio_init() {
     GPIOG->OSPEEDR |= (GPIO_OSPEEDR_OSPEED14_1);  // Pin PG14 (bit  s 29:28) as Fast Speed (1:0)
     GPIOG->PUPDR &= ~(GPIO_PUPDR_PUPD14);  // Pin PG14 (bits 29:28) are 0:0 --> no pull up or pulldown
 }
-
 void toggle_led() {
-
     GPIOG->BSRR |= GPIO_BSRR_BS13;
     GPIOG->BSRR |= GPIO_BSRR_BR14;
-	for(int i = 500000; i > 0; --i) {}
+	delay_ms(1000);
     GPIOG->BSRR |= GPIO_BSRR_BS14;
     GPIOG->BSRR |= GPIO_BSRR_BR13;
-	for(int i = 500000; i > 0; --i) {}
+	delay_ms(1000);
+}
+void systick_init() {
+    SysTick->LOAD &= ~SysTick_LOAD_RELOAD_Msk;
+    SysTick->LOAD = SYSCLOCK / 1000 - 1;
+    SysTick->VAL &= ~SysTick_VAL_CURRENT_Msk;
+    SysTick->CTRL |= SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
+}
+void SysTick_Handler(void) {
+    if (systick_cnt > 0) {
+        systick_cnt--;
+    } 
+}
+void delay_ms(uint32_t delay) {
+    SysTick->VAL &= ~SysTick_VAL_CURRENT_Msk;
+    SysTick->VAL = SYSCLOCK / 1000 - 1;
+    systick_cnt = delay;
+    while (systick_cnt) {
+        /* empty cycle */
+    }
 }
