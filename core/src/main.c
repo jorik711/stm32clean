@@ -20,8 +20,10 @@ __IO uint32_t systick_cnt = 0;
 
 /******************** init func ************************/
 void system_clock_init();
-void gpio_init();
+void led_gpio_init();
 void systick_init();
+void button_gpio_init();
+
 /******************** user func ***********************/
 void toggle_led();
 void delay_ms(uint32_t delay);
@@ -29,11 +31,17 @@ void delay_ms(uint32_t delay);
 int main(void)
 {
     system_clock_init();
-    gpio_init();
+    led_gpio_init();
     systick_init();
-    //SystemCoreClockUpdate();
+    button_gpio_init();
+    
     while (1)
     {
+        if (GPIOA->IDR & GPIO_IDR_IDR_0) {
+            GPIOG->BSRR |= GPIO_BSRR_BS14;
+        } else {
+            GPIOG->BSRR |= GPIO_BSRR_BR14;
+        }
         toggle_led();
     }
     return 0;
@@ -85,7 +93,7 @@ void system_clock_init() {
     while (!(RCC->CFGR & RCC_CFGR_SWS_PLL));
     SystemCoreClockUpdate();
 }
-void gpio_init() {
+void led_gpio_init() {
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOGEN;  // Enable the GPIOG clock
     /********** PG13 ***********/
     GPIOG->MODER |= (GPIO_MODER_MODER13_0);  // pin PG13(bits 27:26) as Output (01)
@@ -100,9 +108,9 @@ void gpio_init() {
 }
 void toggle_led() {
     GPIOG->BSRR |= GPIO_BSRR_BS13;
-    GPIOG->BSRR |= GPIO_BSRR_BR14;
+    //GPIOG->BSRR |= GPIO_BSRR_BR14;
 	delay_ms(1000);
-    GPIOG->BSRR |= GPIO_BSRR_BS14;
+    //GPIOG->BSRR |= GPIO_BSRR_BS14;
     GPIOG->BSRR |= GPIO_BSRR_BR13;
 	delay_ms(1000);
 }
@@ -124,4 +132,10 @@ void delay_ms(uint32_t delay) {
     while (systick_cnt) {
         /* empty cycle */
     }
+}
+/* PA0 button stm32f4 - discovery */
+void button_gpio_init(){
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;  // Enable the GPIOA clock
+    GPIOA->MODER &= ~(GPIO_MODER_MODER0); /* set bits as input (0:0) */
+    GPIOA->PUPDR |= GPIO_PUPDR_PUPD0_1; /* (1:0) pull up */
 }
