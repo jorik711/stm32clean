@@ -13,7 +13,7 @@
 
 #define PLL_M 	4
 #define PLL_N 	180
-#define PLL_P 	0  
+// #define PLL_P 	2  
 #define SYSCLOCK 180000000UL
 
 __IO uint32_t systick_cnt = 0;
@@ -73,7 +73,7 @@ void system_clock_init() {
     RCC->PLLCFGR |= (PLL_N << RCC_PLLCFGR_PLLN_Pos);
 
     RCC->PLLCFGR &= ~(RCC_PLLCFGR_PLLP);
-    RCC->PLLCFGR |= (PLL_P << RCC_PLLCFGR_PLLP_Pos);
+    //RCC->PLLCFGR |= (PLL_P << RCC_PLLCFGR_PLLP_Pos);
 
     RCC->PLLCFGR |= RCC_PLLCFGR_PLLSRC;
     /******************* Enable the PLL *****************************************/
