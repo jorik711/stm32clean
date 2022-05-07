@@ -13,8 +13,8 @@
 
 #define PLL_M 	4
 #define PLL_N 	180
-#define PLL_P 	2  
-#define SYSCLOCK 16000000UL
+#define PLL_P 	0  
+#define SYSCLOCK 180000000UL
 
 __IO uint32_t systick_cnt = 0;
 
@@ -31,23 +31,23 @@ int main(void)
     system_clock_init();
     gpio_init();
     systick_init();
+    //SystemCoreClockUpdate();
     while (1)
     {
         toggle_led();
     }
     return 0;
 }
-// FIXME: clock = 16'000'000 Hz!!!! not 180'000'000 Hz
 void system_clock_init() {
     /* Определяем внешний генератор */
     RCC->CR |= RCC_CR_HSEON;
     /* Ждем пока HSE стабилизируется. Определяется по флагу RCC_CR_HSERDY 
     (флаг готовности внешнего высокоскоростного тактирования) */
-    while(!(RCC->CR & RCC_CR_HSERDY)) {} 
+    while(!(RCC->CR & RCC_CR_HSERDY)) {}
     /* настройки voltage regulator  */
     PWR->CR |=PWR_CR_VOS;
     /* включение режима power over drive */
-    PWR->CR |=PWR_CR_ODEN;
+    //PWR->CR |=PWR_CR_ODEN;
     /************************* Configure flash *****************************/
     /* разрешение предварительной выборки инструкций */
     FLASH->ACR |= FLASH_ACR_PRFTEN;
@@ -66,13 +66,13 @@ void system_clock_init() {
     /* APB2 prescalar */
     RCC->CFGR |= RCC_CFGR_PPRE2_DIV2; 
     /****************** Configure the MAIN PLL (ФАПЧ) *******************************/
-    RCC->PLLCFGR &= ~(RCC_PLLCFGR_PLLM_Pos) ;
+    RCC->PLLCFGR &= ~(RCC_PLLCFGR_PLLM) ;
     RCC->PLLCFGR |= (PLL_M << RCC_PLLCFGR_PLLM_Pos);
 
-    RCC->PLLCFGR &= ~(RCC_PLLCFGR_PLLN_Pos); 
+    RCC->PLLCFGR &= ~(RCC_PLLCFGR_PLLN); 
     RCC->PLLCFGR |= (PLL_N << RCC_PLLCFGR_PLLN_Pos);
 
-    RCC->PLLCFGR &= ~(RCC_PLLCFGR_PLLP_Pos);
+    RCC->PLLCFGR &= ~(RCC_PLLCFGR_PLLP);
     RCC->PLLCFGR |= (PLL_P << RCC_PLLCFGR_PLLP_Pos);
 
     RCC->PLLCFGR |= RCC_PLLCFGR_PLLSRC;
@@ -81,8 +81,9 @@ void system_clock_init() {
     /*  */
     while(!(RCC->CR & RCC_CR_PLLRDY)) {}
     /******* Select the Clock Source and wait for it to be set ******************/
-    RCC->CFGR |= (RCC_CFGR_SW_PLL << RCC_CFGR_SW_Pos);
-
+    RCC->CFGR |= RCC_CFGR_SW_PLL;
+    while (!(RCC->CFGR & RCC_CFGR_SWS_PLL));
+    SystemCoreClockUpdate();
 }
 void gpio_init() {
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOGEN;  // Enable the GPIOG clock
@@ -118,7 +119,7 @@ void SysTick_Handler(void) {
 }
 void delay_ms(uint32_t delay) {
     SysTick->VAL &= ~SysTick_VAL_CURRENT_Msk;
-    SysTick->VAL = SYSCLOCK / 1000 - 1;
+    SysTick->VAL = SYSCLOCK / 1000 - 1; /* SystemCoreClock */
     systick_cnt = delay;
     while (systick_cnt) {
         /* empty cycle */
