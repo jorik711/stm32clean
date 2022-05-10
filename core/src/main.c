@@ -17,6 +17,12 @@
 #define SYSCLOCK 180000000UL
 
 __IO uint32_t systick_cnt = 0;
+static __IO uint32_t flag = 0;
+
+uint32_t buttonState = 0;
+uint32_t debounceCount = 0;
+uint32_t result = 0;
+uint32_t flagDebounce = 0;
 
 /******************** init func ************************/
 void system_clock_init();
@@ -27,7 +33,9 @@ void button_gpio_init();
 /******************** user func ***********************/
 void toggle_led();
 void delay_ms(uint32_t delay);
+uint32_t debounce_handler(uint32_t buttonState);
 
+/***************** main func *******************************/
 int main(void)
 {
     system_clock_init();
@@ -35,14 +43,24 @@ int main(void)
     systick_init();
     button_gpio_init();
     
+    
     while (1)
     {
-        if (GPIOA->IDR & GPIO_IDR_IDR_0) {
-            GPIOG->BSRR |= GPIO_BSRR_BS14;
-        } else {
-            GPIOG->BSRR |= GPIO_BSRR_BR14;
-        }
-        toggle_led();
+            buttonState = GPIOA->IDR & GPIO_IDR_IDR_0;
+            result = debounce_handler(buttonState);
+            if (result == 1 && flagDebounce == 0){
+                flagDebounce = 1;
+                GPIOG->ODR ^= GPIO_ODR_ODR_14;
+            }
+            else if (result == 0 && flagDebounce == 1) {
+                flagDebounce = 0;
+            }
+        // if (GPIOA->IDR & GPIO_IDR_IDR_0) {
+        //     GPIOG->BSRR |= GPIO_BSRR_BS14;
+        // } else {
+        //     GPIOG->BSRR |= GPIO_BSRR_BR14;
+        // }
+        //toggle_led();
     }
     return 0;
 }
@@ -102,7 +120,7 @@ void led_gpio_init() {
     GPIOG->PUPDR &= ~(GPIO_PUPDR_PUPD13);  // Pin PG13 (bits 27:26) are 0:0 --> no pull up or pulldown
     /*********** PG14 ************/
     GPIOG->MODER |= (GPIO_MODER_MODER14_0);  // pin PG13(bits 29:28) as Output (01)
-    GPIOG->OTYPER &= ~(GPIO_OTYPER_OT14);  // bit 14 = 0 --> Output push pull
+    GPIOG->OTYPER &= ~(GPIO_OTYPER_OT14);  // bit 14 = 0 --> Ouflagtput push pull
     GPIOG->OSPEEDR |= (GPIO_OSPEEDR_OSPEED14_1);  // Pin PG14 (bit  s 29:28) as Fast Speed (1:0)
     GPIOG->PUPDR &= ~(GPIO_PUPDR_PUPD14);  // Pin PG14 (bits 29:28) are 0:0 --> no pull up or pulldown
 }
@@ -138,4 +156,39 @@ void button_gpio_init(){
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;  // Enable the GPIOA clock
     GPIOA->MODER &= ~(GPIO_MODER_MODER0); /* set bits as input (0:0) */
     GPIOA->PUPDR |= GPIO_PUPDR_PUPD0_1; /* (1:0) pull up */
+
+    /* Включить прерывание */
+    NVIC_EnableIRQ(EXTI0_IRQn);
+    /* Разрешить прерывание */
+    EXTI->IMR |= EXTI_IMR_IM0;
+    /* Выбор прерывани по нарастающему фронту */
+    EXTI->RTSR |= EXTI_RTSR_TR0;
+    /* Запрещаем по спадающему фронту */
+    EXTI->FTSR &= ~EXTI_FTSR_TR0;
+}
+
+void EXTI0_IRQHandler(void) {
+    /* сбрасываем флаг прерывания  */
+    EXTI->PR |= EXTI_PR_PR0;
+}
+
+uint32_t debounce_handler(uint32_t buttonState) {
+
+    if (buttonState != 0) {  // если кнопка нажата
+        if (debounceCount < 1000) { // если счетчик дребезга меньше "n"
+            debounceCount++;
+            return 0;
+        } else {
+            return 1; // кнопка нажата;
+        } 
+    } else {
+        if (buttonState == 0) { // кнопка отжата 
+            if (debounceCount > 0) {
+                debounceCount--;
+                return 1;
+            } else {
+                return 0; // кнопка отжата
+            }
+        }
+    }
 }
