@@ -11,13 +11,17 @@
 
 #include "stm32f4xx.h"
 
-#define PLL_M 	4
-#define PLL_N 	180
+#define PLL_M 	    4
+#define PLL_N 	    180
 // #define PLL_P 	2  
-#define SYSCLOCK 180000000UL
+#define SYSCLOCK    180000000UL
+
+#define TIM_PSC     8999
+#define TIM_ARR     9999
 
 __IO uint32_t systick_cnt = 0;
 static __IO uint32_t flag = 0;
+__IO uint32_t tim2_cnt = 0;
 
 uint32_t buttonState = 0;
 uint32_t debounceCount = 0;
@@ -29,6 +33,7 @@ void system_clock_init();
 void led_gpio_init();
 void systick_init();
 void button_gpio_init();
+static void tim2_init();
 
 /******************** user func ***********************/
 void toggle_led();
@@ -42,25 +47,24 @@ int main(void)
     led_gpio_init();
     systick_init();
     button_gpio_init();
-    
+    /*************** timer init and start ******************/
+    tim2_init();
+    /* update interrupt enable */
+    TIM2->DIER |= TIM_DIER_UIE;
+    /* start timer */
+    TIM2->CR1 |= TIM_CR1_CEN;
     
     while (1)
     {
-            buttonState = GPIOA->IDR & GPIO_IDR_IDR_0;
-            result = debounce_handler(buttonState);
-            if (result == 1 && flagDebounce == 0){
-                flagDebounce = 1;
-                GPIOG->ODR ^= GPIO_ODR_ODR_14;
-            }
-            else if (result == 0 && flagDebounce == 1) {
-                flagDebounce = 0;
-            }
-        // if (GPIOA->IDR & GPIO_IDR_IDR_0) {
-        //     GPIOG->BSRR |= GPIO_BSRR_BS14;
-        // } else {
-        //     GPIOG->BSRR |= GPIO_BSRR_BR14;
-        // }
-        //toggle_led();
+        buttonState = GPIOA->IDR & GPIO_IDR_IDR_0;
+        result = debounce_handler(buttonState);
+        if (result == 1 && flagDebounce == 0){
+            flagDebounce = 1;
+            GPIOG->ODR ^= GPIO_ODR_ODR_14;
+        }
+        else if (result == 0 && flagDebounce == 1) {
+            flagDebounce = 0;
+        }
     }
     return 0;
 }
@@ -166,12 +170,10 @@ void button_gpio_init(){
     /* Запрещаем по спадающему фронту */
     EXTI->FTSR &= ~EXTI_FTSR_TR0;
 }
-
 void EXTI0_IRQHandler(void) {
     /* сбрасываем флаг прерывания  */
     EXTI->PR |= EXTI_PR_PR0;
 }
-
 uint32_t debounce_handler(uint32_t buttonState) {
 
     if (buttonState != 0) {  // если кнопка нажата
@@ -190,5 +192,20 @@ uint32_t debounce_handler(uint32_t buttonState) {
                 return 0; // кнопка отжата
             }
         }
+    }
+}
+static  void tim2_init(void){
+    /* enable clock */
+    RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
+    /* enable interrupt */
+    NVIC_EnableIRQ(TIM2_IRQn);
+    TIM2->PSC = TIM_PSC;
+    TIM2->ARR = TIM_ARR;
+
+}
+void TIM2_IRQHandler(void) {
+    if (TIM2->SR & TIM_SR_UIF) {
+        TIM2->SR &= ~TIM_SR_UIF;
+        GPIOG->ODR ^= GPIO_ODR_ODR_13;
     }
 }
