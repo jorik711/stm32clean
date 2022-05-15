@@ -16,8 +16,11 @@
 // #define PLL_P 	2  
 #define SYSCLOCK    180000000UL
 
-#define TIM_PSC     8999
-#define TIM_ARR     9999
+#define TIM2_PSC     8999
+#define TIM2_ARR     9999
+
+#define TIM3_PSC     8999
+#define TIM3_ARR     49
 
 __IO uint32_t systick_cnt = 0;
 static __IO uint32_t flag = 0;
@@ -27,14 +30,17 @@ uint32_t buttonState = 0;
 uint32_t debounceCount = 0;
 uint32_t result = 0;
 uint32_t flagDebounce = 0;
-
+/******************** dynamic indication ***************/
+__IO uint32_t tim3_cnt = 1; /* выбор зардяда дисплея */
+extern uint8_t num1, num2, num3, num4; /* номер индикатора */
+extern uint16_t showNumber; /* выводимое число */
 /******************** init func ************************/
 void system_clock_init();
 void led_gpio_init();
 void systick_init();
 void button_gpio_init();
 static void tim2_init();
-
+static void tim3_init();
 /******************** user func ***********************/
 void toggle_led();
 void delay_ms(uint32_t delay);
@@ -47,18 +53,23 @@ int main(void)
     led_gpio_init();
     systick_init();
     button_gpio_init();
-    /*************** timer init and start ******************/
+    /*************** timer2 init and start ******************/
     tim2_init();
     /* update interrupt enable */
     TIM2->DIER |= TIM_DIER_UIE;
     /* start timer */
     TIM2->CR1 |= TIM_CR1_CEN;
-    
+    /*************** timer3 init and start ******************/
+    tim3_init();
+    /* update interrupt enable */
+    TIM3->DIER |= TIM_DIER_UIE;
+    /* start timer */
+    TIM3->CR1 |= TIM_CR1_CEN;
     while (1)
     {
         buttonState = GPIOA->IDR & GPIO_IDR_IDR_0;
         result = debounce_handler(buttonState);
-        if (result == 1 && flagDebounce == 0){
+        if (result == 1 && flagDebounce == 0) {
             flagDebounce = 1;
             GPIOG->ODR ^= GPIO_ODR_ODR_14;
         }
@@ -116,7 +127,7 @@ void system_clock_init() {
     SystemCoreClockUpdate();
 }
 void led_gpio_init() {
-    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOGEN;  // Enable the GPIOG clock
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOGEN;  /* Enable the GPIOG clock */
     /********** PG13 ***********/
     GPIOG->MODER |= (GPIO_MODER_MODER13_0);  // pin PG13(bits 27:26) as Output (01)
     GPIOG->OTYPER &= ~(GPIO_OTYPER_OT13);  // bit 13=0 --> Output push pull
@@ -124,9 +135,25 @@ void led_gpio_init() {
     GPIOG->PUPDR &= ~(GPIO_PUPDR_PUPD13);  // Pin PG13 (bits 27:26) are 0:0 --> no pull up or pulldown
     /*********** PG14 ************/
     GPIOG->MODER |= (GPIO_MODER_MODER14_0);  // pin PG13(bits 29:28) as Output (01)
-    GPIOG->OTYPER &= ~(GPIO_OTYPER_OT14);  // bit 14 = 0 --> Ouflagtput push pull
+    GPIOG->OTYPER &= ~(GPIO_OTYPER_OT14);  // bit 14 = 0 --> Output push pull
     GPIOG->OSPEEDR |= (GPIO_OSPEEDR_OSPEED14_1);  // Pin PG14 (bit  s 29:28) as Fast Speed (1:0)
     GPIOG->PUPDR &= ~(GPIO_PUPDR_PUPD14);  // Pin PG14 (bits 29:28) are 0:0 --> no pull up or pulldown
+    /********** dynamic indication *************************/
+    /* pins PG0 - PG11 as Output (01) */
+    GPIOG->MODER |= GPIO_MODER_MODER0_0 | GPIO_MODER_MODER1_0 | GPIO_MODER_MODER2_0 | GPIO_MODER_MODER3_0 | GPIO_MODER_MODER4_0 |
+                    GPIO_MODER_MODER5_0 | GPIO_MODER_MODER6_0 | GPIO_MODER_MODER7_0 | GPIO_MODER_MODER8_0 | GPIO_MODER_MODER9_0 |
+                    GPIO_MODER_MODER10_0 |GPIO_MODER_MODER11_0;
+    /* pins PG0 - PG11 Output push pull (00) */ 
+    GPIOG->OTYPER &= ~(GPIO_OTYPER_OT0) & ~(GPIO_OTYPER_OT1) & ~(GPIO_OTYPER_OT2) & ~(GPIO_OTYPER_OT3) & ~(GPIO_OTYPER_OT4) & ~(GPIO_OTYPER_OT5)
+                & ~(GPIO_OTYPER_OT6) & ~(GPIO_OTYPER_OT7) & ~(GPIO_OTYPER_OT8) & ~(GPIO_OTYPER_OT9) & ~(GPIO_OTYPER_OT10)& ~(GPIO_OTYPER_OT11);
+    /* pins PG0 - PG11 as fast speed (10) */
+    GPIOG->OSPEEDR |= GPIO_OSPEEDR_OSPEED0_1 | GPIO_OSPEEDR_OSPEED1_1 | GPIO_OSPEEDR_OSPEED2_1 | GPIO_OSPEEDR_OSPEED3_1 | GPIO_OSPEEDR_OSPEED4_1 |
+                    GPIO_OSPEEDR_OSPEED5_1 | GPIO_OSPEEDR_OSPEED6_1 | GPIO_OSPEEDR_OSPEED7_1 | GPIO_OSPEEDR_OSPEED8_1 | GPIO_OSPEEDR_OSPEED9_1 |
+                    GPIO_OSPEEDR_OSPEED10_1 | GPIO_OSPEEDR_OSPEED11_1;
+    /* pins PG0 - PG11 no pull up or pulldown (00) */
+    GPIOG->PUPDR &= ~(GPIO_PUPDR_PUPD0) & ~(GPIO_PUPDR_PUPD1) & ~(GPIO_PUPDR_PUPD2) & ~(GPIO_PUPDR_PUPD3) & ~(GPIO_PUPDR_PUPD4)
+                    & ~(GPIO_PUPDR_PUPD5) & ~(GPIO_PUPDR_PUPD6) & ~(GPIO_PUPDR_PUPD7) & ~(GPIO_PUPDR_PUPD8) & ~(GPIO_PUPDR_PUPD9)
+                    & ~(GPIO_PUPDR_PUPD10) & ~(GPIO_PUPDR_PUPD11);
 }
 void toggle_led() {
     GPIOG->BSRR |= GPIO_BSRR_BS13;
@@ -199,8 +226,8 @@ static  void tim2_init(void){
     RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
     /* enable interrupt */
     NVIC_EnableIRQ(TIM2_IRQn);
-    TIM2->PSC = TIM_PSC;
-    TIM2->ARR = TIM_ARR;
+    TIM2->PSC = TIM2_PSC;
+    TIM2->ARR = TIM2_ARR;
 
 }
 void TIM2_IRQHandler(void) {
@@ -208,4 +235,15 @@ void TIM2_IRQHandler(void) {
         TIM2->SR &= ~TIM_SR_UIF;
         GPIOG->ODR ^= GPIO_ODR_ODR_13;
     }
+}
+static void tim3_init() {
+    /* enable clock */
+    RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
+    /* enable interrupt */
+    NVIC_EnableIRQ(TIM3_IRQn);
+    TIM3->PSC = TIM3_PSC;
+    TIM3->ARR = TIM3_ARR;
+}
+void TIM3_IRQHandler() {
+    TIM3->SR &= ~TIM_SR_UIF;
 }
