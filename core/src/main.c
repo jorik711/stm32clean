@@ -10,6 +10,7 @@
  */
 
 #include "stm32f4xx.h"
+#include "led.h"
 
 #define PLL_M 	    4
 #define PLL_N 	    180
@@ -34,6 +35,7 @@ uint32_t flagDebounce = 0;
 __IO uint32_t tim3_cnt = 1; /* выбор зардяда дисплея */
 extern uint8_t num1, num2, num3, num4; /* номер индикатора */
 extern uint16_t showNumber; /* выводимое число */
+uint32_t counter; /* переменная для счета */
 /******************** init func ************************/
 void system_clock_init();
 void led_gpio_init();
@@ -67,15 +69,19 @@ int main(void)
     TIM3->CR1 |= TIM_CR1_CEN;
     while (1)
     {
-        buttonState = GPIOA->IDR & GPIO_IDR_IDR_0;
-        result = debounce_handler(buttonState);
-        if (result == 1 && flagDebounce == 0) {
-            flagDebounce = 1;
-            GPIOG->ODR ^= GPIO_ODR_ODR_14;
+        for (counter = 0; counter < 10000; ++counter ) {
+            ledstream(counter);
+            delay_ms(500);
         }
-        else if (result == 0 && flagDebounce == 1) {
-            flagDebounce = 0;
-        }
+        // buttonState = GPIOA->IDR & GPIO_IDR_IDR_0;
+        // result = debounce_handler(buttonState);
+        // if (result == 1 && flagDebounce == 0) {
+        //     flagDebounce = 1;
+        //     GPIOG->ODR ^= GPIO_ODR_ODR_14;
+        // }
+        // else if (result == 0 && flagDebounce == 1) {
+        //     flagDebounce = 0;
+        // }
     }
     return 0;
 }
@@ -140,20 +146,23 @@ void led_gpio_init() {
     GPIOG->PUPDR &= ~(GPIO_PUPDR_PUPD14);  // Pin PG14 (bits 29:28) are 0:0 --> no pull up or pulldown
     /********** dynamic indication *************************/
     /* pins PG0 - PG11 as Output (01) */
-    GPIOG->MODER |= GPIO_MODER_MODER0_0 | GPIO_MODER_MODER1_0 | GPIO_MODER_MODER2_0 | GPIO_MODER_MODER3_0 | GPIO_MODER_MODER4_0 |
+    GPIOG->MODER |= (GPIO_MODER_MODER0_0 | GPIO_MODER_MODER1_0 | GPIO_MODER_MODER2_0 | GPIO_MODER_MODER3_0 | GPIO_MODER_MODER4_0 |
                     GPIO_MODER_MODER5_0 | GPIO_MODER_MODER6_0 | GPIO_MODER_MODER7_0 | GPIO_MODER_MODER8_0 | GPIO_MODER_MODER9_0 |
-                    GPIO_MODER_MODER10_0 |GPIO_MODER_MODER11_0;
+                    GPIO_MODER_MODER10_0 |GPIO_MODER_MODER11_0);
     /* pins PG0 - PG11 Output push pull (00) */ 
-    GPIOG->OTYPER &= ~(GPIO_OTYPER_OT0) & ~(GPIO_OTYPER_OT1) & ~(GPIO_OTYPER_OT2) & ~(GPIO_OTYPER_OT3) & ~(GPIO_OTYPER_OT4) & ~(GPIO_OTYPER_OT5)
-                & ~(GPIO_OTYPER_OT6) & ~(GPIO_OTYPER_OT7) & ~(GPIO_OTYPER_OT8) & ~(GPIO_OTYPER_OT9) & ~(GPIO_OTYPER_OT10)& ~(GPIO_OTYPER_OT11);
+    GPIOG->OTYPER &= ~(GPIO_OTYPER_OT0 | GPIO_OTYPER_OT1 | GPIO_OTYPER_OT2 | GPIO_OTYPER_OT3 | GPIO_OTYPER_OT4 |  GPIO_OTYPER_OT5 |
+                GPIO_OTYPER_OT6 |  GPIO_OTYPER_OT7 |  GPIO_OTYPER_OT8 |  GPIO_OTYPER_OT9 |  GPIO_OTYPER_OT10 | GPIO_OTYPER_OT11);
     /* pins PG0 - PG11 as fast speed (10) */
-    GPIOG->OSPEEDR |= GPIO_OSPEEDR_OSPEED0_1 | GPIO_OSPEEDR_OSPEED1_1 | GPIO_OSPEEDR_OSPEED2_1 | GPIO_OSPEEDR_OSPEED3_1 | GPIO_OSPEEDR_OSPEED4_1 |
+    GPIOG->OSPEEDR |= (GPIO_OSPEEDR_OSPEED0_1 | GPIO_OSPEEDR_OSPEED1_1 | GPIO_OSPEEDR_OSPEED2_1 | GPIO_OSPEEDR_OSPEED3_1 | GPIO_OSPEEDR_OSPEED4_1 |
                     GPIO_OSPEEDR_OSPEED5_1 | GPIO_OSPEEDR_OSPEED6_1 | GPIO_OSPEEDR_OSPEED7_1 | GPIO_OSPEEDR_OSPEED8_1 | GPIO_OSPEEDR_OSPEED9_1 |
-                    GPIO_OSPEEDR_OSPEED10_1 | GPIO_OSPEEDR_OSPEED11_1;
+                    GPIO_OSPEEDR_OSPEED10_1 | GPIO_OSPEEDR_OSPEED11_1);
     /* pins PG0 - PG11 no pull up or pulldown (00) */
-    GPIOG->PUPDR &= ~(GPIO_PUPDR_PUPD0) & ~(GPIO_PUPDR_PUPD1) & ~(GPIO_PUPDR_PUPD2) & ~(GPIO_PUPDR_PUPD3) & ~(GPIO_PUPDR_PUPD4)
-                    & ~(GPIO_PUPDR_PUPD5) & ~(GPIO_PUPDR_PUPD6) & ~(GPIO_PUPDR_PUPD7) & ~(GPIO_PUPDR_PUPD8) & ~(GPIO_PUPDR_PUPD9)
-                    & ~(GPIO_PUPDR_PUPD10) & ~(GPIO_PUPDR_PUPD11);
+    GPIOG->PUPDR &= ~(GPIO_PUPDR_PUPD0 |  GPIO_PUPDR_PUPD1 |  GPIO_PUPDR_PUPD2 |  GPIO_PUPDR_PUPD3 |  GPIO_PUPDR_PUPD4 |
+                    GPIO_PUPDR_PUPD5 |  GPIO_PUPDR_PUPD6 |  GPIO_PUPDR_PUPD7 |  GPIO_PUPDR_PUPD8 |  GPIO_PUPDR_PUPD9 |
+                    GPIO_PUPDR_PUPD10 |  GPIO_PUPDR_PUPD11);
+    /* pins PG0 - PG11 reset */
+    GPIOG->ODR &= ~(GPIO_ODR_ODR_0 | GPIO_ODR_ODR_1 | GPIO_ODR_ODR_2 | GPIO_ODR_ODR_3 | GPIO_ODR_ODR_4 | GPIO_ODR_ODR_5 |
+                    GPIO_ODR_ODR_6 | GPIO_ODR_ODR_7 | GPIO_ODR_ODR_8 | GPIO_ODR_ODR_9 | GPIO_ODR_ODR_10 | GPIO_ODR_ODR_11);
 }
 void toggle_led() {
     GPIOG->BSRR |= GPIO_BSRR_BS13;
@@ -245,5 +254,47 @@ static void tim3_init() {
     TIM3->ARR = TIM3_ARR;
 }
 void TIM3_IRQHandler() {
-    TIM3->SR &= ~TIM_SR_UIF;
+    if (TIM3->SR & TIM_SR_UIF) {
+        TIM3->SR &= ~TIM_SR_UIF;
+        if (tim3_cnt == 1) {
+            GPIOG->ODR |= GPIO_ODR_ODR_0;
+            GPIOG->ODR &= ~(GPIO_ODR_ODR_1 | GPIO_ODR_ODR_2 | GPIO_ODR_ODR_3);
+            segchar(num1);
+            GPIOG->ODR &= ~(GPIO_ODR_ODR_1 | GPIO_ODR_ODR_2 | GPIO_ODR_ODR_3);
+        }
+        if (tim3_cnt == 2) {
+            GPIOG->ODR |= GPIO_ODR_ODR_1;
+            GPIOG->ODR &= ~(GPIO_ODR_ODR_0 | GPIO_ODR_ODR_2 | GPIO_ODR_ODR_3);
+            segchar(num2);
+            if(showNumber < 10) {
+                GPIOG->ODR &= ~(GPIO_ODR_ODR_4 | GPIO_ODR_ODR_5 | GPIO_ODR_ODR_6 | GPIO_ODR_ODR_7 | 
+                                GPIO_ODR_ODR_8 | GPIO_ODR_ODR_9 | GPIO_ODR_ODR_10 | GPIO_ODR_ODR_11);
+            }
+            GPIOG->ODR &= ~(GPIO_ODR_ODR_0 | GPIO_ODR_ODR_2 | GPIO_ODR_ODR_3);
+        }
+        if (tim3_cnt == 3) {
+            GPIOG->ODR |= GPIO_ODR_ODR_2;
+            GPIOG->ODR &= ~(GPIO_ODR_ODR_0 | GPIO_ODR_ODR_1 | GPIO_ODR_ODR_3);
+            segchar(num3);
+            if(showNumber < 100) {
+                GPIOG->ODR &= ~(GPIO_ODR_ODR_4 | GPIO_ODR_ODR_5 | GPIO_ODR_ODR_6 | GPIO_ODR_ODR_7 | 
+                                GPIO_ODR_ODR_8 | GPIO_ODR_ODR_9 | GPIO_ODR_ODR_10 | GPIO_ODR_ODR_11);
+            }
+            GPIOG->ODR &= ~(GPIO_ODR_ODR_0 | GPIO_ODR_ODR_1 | GPIO_ODR_ODR_3);
+        }
+        if (tim3_cnt == 4) {
+            GPIOG->ODR |= GPIO_ODR_ODR_3;
+            GPIOG->ODR &= ~(GPIO_ODR_ODR_0 | GPIO_ODR_ODR_1 | GPIO_ODR_ODR_2);
+            segchar(num4);
+            if(showNumber < 1000) {
+                GPIOG->ODR &= ~(GPIO_ODR_ODR_4 | GPIO_ODR_ODR_5 | GPIO_ODR_ODR_6 | GPIO_ODR_ODR_7 | 
+                                GPIO_ODR_ODR_8 | GPIO_ODR_ODR_9 | GPIO_ODR_ODR_10 | GPIO_ODR_ODR_11);
+            }
+            GPIOG->ODR &= ~(GPIO_ODR_ODR_0 | GPIO_ODR_ODR_1 | GPIO_ODR_ODR_2);
+        }
+        tim3_cnt++;
+        if (tim3_cnt > 4) {
+            tim3_cnt = 0;
+        }
+    }
 }

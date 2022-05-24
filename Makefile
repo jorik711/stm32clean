@@ -31,7 +31,8 @@ BUILD_DIR = build
 # C sources
 C_SOURCES = \
 CMSIS/src/system_stm32f4xx.c \
-core/src/main.c
+core/src/main.c \
+core/src/led.c
 
 # ASM sources
 ASM_SOURCES =  \
